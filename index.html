@@ -6,295 +6,463 @@
     name="viewport"
     content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
   />
-  <title>AR Rangoli — Interactive</title>
+  <title>AR Rangoli — Immersive</title>
   <meta name="theme-color" content="#0c0c0c" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <style>
     :root {
-      --bg: #0b0b0e;
-      --fg: #f7f2ea;
-      --accent: #e15a97;
-      --accent-2: #ffb703;
-      --muted: #8b8b93;
+      --bg: #0b0b0e; --fg: #f7f2ea; --muted:#9b9ba3;
+      --accent:#e15a97; --accent2:#ffb703;
     }
-    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--fg);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial;
-    }
-    canvas { display: block; }
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+      font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Arial}
+    canvas{display:block}
 
-    /* UI */
-    .overlay{position:fixed;inset:0;pointer-events:none;display:grid;place-items:end center;padding:env(safe-area-inset-bottom)}
-    .hud{width:100%;box-sizing:border-box;padding:14px 16px 18px;display:flex;gap:10px;justify-content:center;align-items:center;background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(12,12,14,0.85) 30%, rgba(12,12,14,1) 100%);pointer-events:none}
-    .pill{pointer-events:auto;border:1px solid #262630;background:#13131a;color:var(--fg);border-radius:999px;padding:10px 14px;font-size:14px;opacity:.95;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
-    .pill b{color:var(--accent-2)}
-    .topbar{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;gap:10px;background:linear-gradient(180deg,rgba(12,12,14,.95) 0%, rgba(12,12,14,.4) 100%);backdrop-filter:blur(6px);z-index:3;pointer-events:none}
-    .brand{pointer-events:auto;font-weight:700;letter-spacing:.3px;color:var(--fg);font-size:15px;display:inline-flex;align-items:center;gap:10px}
-    .brand .dot{width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #fff 0, #ffd166 40%, #f94144 100%);box-shadow:0 0 8px rgba(255,210,50,.9)}
-    .badge{pointer-events:auto;border-radius:999px;border:1px solid #2c2c34;padding:6px 10px;font-size:12px;color:var(--muted)}
-    .center-cue{position:fixed;inset:0;display:grid;place-items:center;z-index:2;pointer-events:none;transition:opacity .3s ease}
-    .center-cue .card{pointer-events:auto;background:rgba(10,10,14,.75);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px 18px;text-align:center;max-width:280px;color:var(--fg);box-shadow:0 10px 30px rgba(0,0,0,.35);animation:pop .38s ease-out both}
-    @keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
-    .center-cue h3{margin:0 0 6px;font-size:18px}
-    .center-cue p{margin:0;font-size:13px;color:var(--muted)}
-    .loader{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%, #141420, #0b0b0e 60%);z-index:4;color:var(--fg);text-align:center;padding:24px}
-    .chakra{width:84px;height:84px;border-radius:50%;border:3px dashed #ffd166;animation:spin 2.2s linear infinite;box-shadow:0 0 0 2px rgba(255,255,255,.03) inset;position:relative;margin:auto}
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:center;
+      padding:10px 12px;background:linear-gradient(180deg,rgba(12,12,14,.95) 0%, rgba(12,12,14,.4) 100%);backdrop-filter:blur(6px);pointer-events:none}
+    .brand{pointer-events:auto;display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand .dot{width:10px;height:10px;border-radius:50%;
+      background:radial-gradient(circle at 30% 30%, #fff 0, #ffd166 40%, #f94144 100%);
+      box-shadow:0 0 8px rgba(255,210,50,.9)}
+    .badge{pointer-events:auto;border:1px solid #2c2c34;border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
+
+    .loader{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%, #141420, #0b0b0e 60%);z-index:10;text-align:center;padding:24px}
+    .chakra{width:84px;height:84px;border-radius:50%;border:3px dashed #ffd166;animation:spin 2.2s linear infinite;
+      box-shadow:0 0 0 2px rgba(255,255,255,.03) inset;position:relative;margin:auto}
     .chakra::after{content:"";position:absolute;inset:14px;border-radius:50%;border:2px dotted #e15a97;animation:spin 3.6s linear infinite reverse;filter:drop-shadow(0 0 12px rgba(225,90,151,.35))}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .loader p{margin-top:16px;font-size:14px;color:var(--muted)}
-    .btn{pointer-events:auto;display:inline-block;margin-top:14px;padding:12px 16px;border-radius:12px;border:1px solid #34343d;background:#17171f;color:#fff;font-weight:600;cursor:pointer}
+    .loader p{margin-top:14px;color:var(--muted)}
+    .btn{display:inline-block;margin-top:14px;padding:12px 16px;border-radius:12px;border:1px solid #34343d;background:#17171f;color:#fff;font-weight:600}
     .btn:active{transform:scale(.98)}
     .hint{margin-top:10px;font-size:12px;color:#9b9ba3}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    .center-cue{position:fixed;inset:0;display:grid;place-items:center;z-index:5;pointer-events:none;transition:opacity .3s ease}
+    .center-cue .card{background:rgba(10,10,14,.75);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.06);
+      border-radius:16px;padding:12px 14px;max-width:300px;text-align:center;animation:pop .35s ease both}
+    @keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+    .center-cue h3{margin:0 0 4px;font-size:17px}
+    .center-cue p{margin:0;color:var(--muted);font-size:13px}
+
+    .controlbar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px 16px;display:flex;justify-content:center;gap:10px;
+      background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(12,12,14,.85) 35%, rgba(12,12,14,1) 100%);
+      pointer-events:none; z-index:6}
+    .control{pointer-events:auto;min-width:44px;height:44px;border-radius:12px;border:1px solid #34343d;background:#17171f;color:#fff;
+      display:flex;align-items:center;justify-content:center;padding:0 12px;font-weight:700}
+    .control:active{transform:scale(.98)}
+    .control.wide{min-width:96px}
   </style>
 </head>
 <body>
-  <!-- Top bar -->
-  <div class="topbar" id="topbar">
+  <div class="topbar">
     <div class="brand"><span class="dot"></span> AR Rangoli</div>
-    <div class="badge" id="statusBadge">Ready</div>
+    <div class="badge" id="status">Ready</div>
   </div>
 
-  <!-- Loader (now doubles as "Enter AR" gate) -->
-  <div class="loader" id="loader" role="status" aria-live="polite">
-    <div class="chakra" aria-hidden="true"></div>
-    <p id="loaderText">Tap to start AR (needed for permission)</p>
-    <button class="btn" id="enterBtn">Enter AR</button>
-    <div class="hint">
-      If you previously denied camera: Chrome ⋮ → Site settings → Reset permissions.
-      <br/>Must be HTTPS + Android Chrome with ARCore.
-    </div>
+  <div class="loader" id="gate">
+    <div class="chakra"></div>
+    <p id="gateText">Tap to start AR (unlocks camera & audio)</p>
+    <button class="btn" id="enter">Enter AR</button>
+    <div class="hint">If you denied camera earlier: Chrome ⋮ → Site settings → Clear & reset. Must be HTTPS + Android Chrome with Google Play Services for AR.</div>
   </div>
 
-  <!-- Center cue -->
-  <div class="center-cue" id="centerCue">
-    <div class="card">
-      <h3>Move your phone</h3>
-      <p>Look around to detect a floor/wall. <b>Tap</b> to place the rangoli.</p>
-    </div>
+  <div class="center-cue" id="cue"><div class="card">
+    <h3>Move your phone</h3>
+    <p>Detect a floor/wall, <b>tap</b> to place. Get close to hear a soft chime ✨</p>
+  </div></div>
+
+  <div class="controlbar" id="controls" style="display:none">
+    <button class="control" id="smaller">–</button>
+    <button class="control" id="bigger">+</button>
+    <button class="control" id="rotL">↺</button>
+    <button class="control" id="rotR">↻</button>
+    <button class="control wide" id="style">🎨 Style</button>
+    <button class="control" id="reset">⟲</button>
   </div>
 
-  <!-- HUD -->
-  <div class="overlay">
-    <div class="hud">
-      <div class="pill">Move closer to rangolis to see them glow ✨ Tap to add more!</div>
-    </div>
-  </div>
-
-  <!-- Three.js -->
+  <!-- Three core -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
 
   <script>
+    /* =========================
+       Utility: haptics + clamp
+    ==========================*/
+    const vibrate = (d)=> navigator.vibrate?.(d);
+    const clamp = (x,a,b)=> Math.min(b, Math.max(a, x));
+
+    /* =========================
+       Reticle
+    ==========================*/
     function createReticle() {
-      const geo = new THREE.RingGeometry(0.09, 0.1, 64);
-      geo.rotateX(-Math.PI / 2);
-      const mat = new THREE.MeshBasicMaterial({ color: 0xffb703, transparent: true, opacity: 0.95 });
-      const ring = new THREE.Mesh(geo, mat);
-      const geo2 = new THREE.RingGeometry(0.055, 0.07, 32);
-      geo2.rotateX(-Math.PI / 2);
-      const mat2 = new THREE.MeshBasicMaterial({ color: 0xe15a97, transparent: true, opacity: 0.95 });
-      const ring2 = new THREE.Mesh(geo2, mat2);
-      const group = new THREE.Group(); group.add(ring, ring2);
-      group.tick = (t) => { const s = 1 + Math.sin(t * 2.2) * 0.03; group.scale.set(s, s, s); };
-      group.visible = false; return group;
+      const g1 = new THREE.RingGeometry(0.09, 0.105, 64); g1.rotateX(-Math.PI/2);
+      const g2 = new THREE.RingGeometry(0.055, 0.07, 32); g2.rotateX(-Math.PI/2);
+      const m1 = new THREE.MeshBasicMaterial({ color: 0xffb703, transparent:true, opacity:0.95 });
+      const m2 = new THREE.MeshBasicMaterial({ color: 0xe15a97, transparent:true, opacity:0.95 });
+      const ring1 = new THREE.Mesh(g1,m1), ring2 = new THREE.Mesh(g2,m2);
+      const group = new THREE.Group(); group.add(ring1, ring2);
+      group.visible = false;
+      group.tick = (t)=> { const s = 1 + Math.sin(t*2.2)*0.03; group.scale.set(s,s,s); };
+      return group;
     }
 
-    function drawRangoliTexture(size = 1024) {
-      const c = document.createElement('canvas'); c.width = c.height = size;
-      const ctx = c.getContext('2d'); ctx.clearRect(0,0,size,size);
-      const cx = size/2, cy = size/2, R = size*0.46;
-      function petal(angle, r1, r2, w, colorA, colorB){
-        ctx.save(); ctx.translate(cx,cy); ctx.rotate(angle);
-        const grad = ctx.createLinearGradient(0,-r1,0,-r2);
-        grad.addColorStop(0,colorA); grad.addColorStop(1,colorB);
-        ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(0,-r1);
-        ctx.bezierCurveTo(w,-r1*0.65, w,-r2*0.35, 0,-r2);
-        ctx.bezierCurveTo(-w,-r2*0.35, -w,-r1*0.65, 0,-r1);
-        ctx.closePath(); ctx.fill(); ctx.restore();
-      }
-      const radial = ctx.createRadialGradient(cx,cy,R*.05,cx,cy,R*1.02);
-      radial.addColorStop(0,'rgba(255,255,255,0.06)');
-      radial.addColorStop(0.65,'rgba(255,210,100,0.04)');
-      radial.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle = radial; ctx.beginPath(); ctx.arc(cx,cy,R*1.05,0,Math.PI*2); ctx.fill();
-      const petals = 12;
-      for(let i=0;i<petals;i++){ const a=(i/petals)*Math.PI*2; petal(a, R*.92, R*.55, R*.25, '#ff6b6b', '#f94144'); }
-      for(let i=0;i<petals;i++){ const a=(i/petals)*Math.PI*2+Math.PI/petals; petal(a, R*.6, R*.34, R*.16, '#ffd166', '#ffb703'); }
-      for(let i=0;i<petals;i++){ const a=(i/petals)*Math.PI*2; petal(a, R*.36, R*.15, R*.11, '#7bd389', '#06d6a0'); }
-      ctx.strokeStyle='rgba(255,255,255,0.82)'; ctx.lineWidth=size*0.006;
-      [0.52,0.38,0.26,0.18,0.12].forEach(mult=>{ctx.beginPath();ctx.arc(cx,cy,R*mult,0,Math.PI*2);ctx.stroke();});
-      function dottedCircle(r,dots,color){
-        for(let i=0;i<dots;i++){const a=(i/dots)*Math.PI*2; const x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r;
-          const g=ctx.createRadialGradient(x,y,0,x,y,size*0.02);
-          g.addColorStop(0,color); g.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=g;
-          ctx.beginPath(); ctx.arc(x,y,size*0.012,0,Math.PI*2); ctx.fill();
+    /* =========================
+       Shader Rangoli Material
+       - Time-driven inner glow & ring ripples
+       - Transparent, sRGB-friendly
+    ==========================*/
+    function makeRangoliMaterial(styleIndex=0) {
+      const uniforms = {
+        uTime: { value: 0 },
+        uStyle: { value: styleIndex },
+        uAlpha: { value: 1.0 }
+      };
+
+      const vert = `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv - 0.5;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
         }
-      }
-      dottedCircle(R*0.48,36,'#ffb703'); dottedCircle(R*0.33,24,'#e15a97'); dottedCircle(R*0.22,16,'#90e0ef');
-      const g2 = ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.16);
-      g2.addColorStop(0,'#fff'); g2.addColorStop(0.4,'#ffd166'); g2.addColorStop(1,'#e15a97');
-      ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(cx,cy,R*0.16,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#2d0e36'; ctx.beginPath(); ctx.arc(cx,cy,R*0.04,0,Math.PI*2); ctx.fill();
-      return c;
+      `;
+
+      const frag = `
+        precision mediump float;
+        varying vec2 vUv;
+        uniform float uTime;
+        uniform float uAlpha;
+        uniform float uStyle;
+
+        float ring(vec2 uv, float r, float w) {
+          float d = abs(length(uv) - r);
+          return smoothstep(w, 0.0, d);
+        }
+        float petal(vec2 uv, float a, float inner, float outer, float width){
+          float ang = atan(uv.y, uv.x);
+          float rr = length(uv);
+          float k = cos(ang*6.0 + a)*0.5+0.5; // 6-fold petals
+          float mask = smoothstep(inner, inner+width, rr) * (1.0 - smoothstep(outer-width, outer, rr));
+          return mask * pow(k, 1.2);
+        }
+
+        vec3 pal(float t, vec3 a, vec3 b, vec3 c, vec3 d){
+          return a + b*cos(6.28318*(c*t+d));
+        }
+
+        void main(){
+          vec2 uv = vUv * 2.0;
+          float r = length(uv);
+          if (r>1.0) discard;
+
+          // Base radial
+          float glow = smoothstep(1.0, 0.2, r);
+          float puls = 0.5 + 0.5*sin(uTime*1.5);
+          float rings = ring(uv, 0.52, 0.01) + ring(uv, 0.38, 0.01) + ring(uv, 0.26, 0.01) + ring(uv, 0.18, 0.01) + ring(uv, 0.12, 0.01);
+          rings *= 0.85;
+
+          // Petal layers
+          float p1 = petal(uv, 0.0 + uTime*0.4, 0.55, 0.92, 0.08);
+          float p2 = petal(uv, 1.57 + uTime*0.5, 0.34, 0.60, 0.07);
+          float p3 = petal(uv, 3.14 + uTime*0.6, 0.15, 0.36, 0.06);
+
+          // Style palettes
+          vec3 c1, c2, c3;
+          if (uStyle < 0.5) { // classic warm
+            c1 = vec3(1.00,0.42,0.38);
+            c2 = vec3(1.00,0.85,0.40);
+            c3 = vec3(0.40,0.90,0.70);
+          } else if (uStyle < 1.5) { // peacock
+            c1 = vec3(0.23,0.52,1.00);
+            c2 = vec3(1.00,0.63,0.11);
+            c3 = vec3(0.52,0.26,0.92);
+          } else { // magenta/teal
+            c1 = vec3(0.79,0.10,0.35);
+            c2 = vec3(0.98,0.82,0.28);
+            c3 = vec3(0.05,0.84,0.63);
+          }
+
+          vec3 color = vec3(0.0);
+          color += c1 * p1;
+          color += c2 * p2;
+          color += c3 * p3;
+
+          // dotted rings via sin bumps
+          float dots = smoothstep(0.47,0.46,r) * (0.5+0.5*sin(atan(uv.y,uv.x)*36.0 + uTime*2.0));
+          color += vec3(1.0,0.72,0.27) * dots * 0.7;
+
+          // center bloom
+          float center = smoothstep(0.2,0.0,r);
+          vec3 bloom = mix(vec3(1.0), c2, 0.5)*center*0.7;
+
+          // breathing glow
+          color += bloom + rings * 0.25 + glow * 0.08 * puls;
+
+          // soft edge
+          float alpha = smoothstep(1.0, 0.92, r) * uAlpha;
+          gl_FragColor = vec4(color, alpha);
+        }
+      `;
+
+      const mat = new THREE.ShaderMaterial({
+        uniforms, vertexShader: vert, fragmentShader: frag,
+        transparent: true
+      });
+      mat.userData.tick = (t)=> { mat.uniforms.uTime.value = t; };
+      mat.userData.setStyle = (i)=> { mat.uniforms.uStyle.value = i; };
+      mat.userData.setAlpha = (a)=> { mat.uniforms.uAlpha.value = a; };
+      return mat;
     }
 
-    // Optimized particle system - fewer particles, smarter updates
-    function createFlowingParticles() {
-      const particleCount = 30; // Reduced from 80
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(particleCount * 3);
-      const colors = new Float32Array(particleCount * 3);
-      
-      const diwaliColors = [
-        new THREE.Color(0xffd166),
-        new THREE.Color(0xe15a97),
-        new THREE.Color(0xff6b6b)
-      ];
+    /* =========================
+       Instanced spark particles
+    ==========================*/
+    function makeSparks(count=120) {
+      const g = new THREE.InstancedBufferGeometry();
+      const base = new THREE.PlaneGeometry(0.06,0.06);
+      g.index = base.index; g.attributes.position = base.attributes.position; g.attributes.uv = base.attributes.uv;
 
-      for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * 2;
-        positions[i3] = Math.cos(angle) * radius;
-        positions[i3 + 1] = Math.random() * 0.2;
-        positions[i3 + 2] = Math.sin(angle) * radius;
-        
-        const color = diwaliColors[Math.floor(Math.random() * diwaliColors.length)];
-        colors[i3] = color.r;
-        colors[i3 + 1] = color.g;
-        colors[i3 + 2] = color.b;
+      const offsets = new Float32Array(count*3);
+      const seeds   = new Float32Array(count*2);
+      for (let i=0;i<count;i++){
+        const a = Math.random()*Math.PI*2;
+        const r = 0.15 + Math.random()*0.65;
+        offsets[i*3+0] = Math.cos(a)*r;
+        offsets[i*3+1] = 0.02 + Math.random()*0.12;
+        offsets[i*3+2] = Math.sin(a)*r;
+        seeds[i*2+0] = Math.random()*100.0;
+        seeds[i*2+1] = 0.3 + Math.random()*0.9; // speed
       }
+      g.setAttribute('aOffset', new THREE.InstancedBufferAttribute(offsets,3));
+      g.setAttribute('aSeed',   new THREE.InstancedBufferAttribute(seeds,2));
 
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      const u = { uTime:{value:0}, uHue:{value: Math.random()*1.0 } };
+      const vs = `
+        attribute vec3 aOffset; attribute vec2 aSeed;
+        uniform float uTime; varying float vAlpha; varying vec3 vCol;
+        void main(){
+          float t = uTime* aSeed.y + aSeed.x;
+          vec3 pos = aOffset;
+          pos.x += sin(t*1.6)*0.02;
+          pos.z += cos(t*1.2)*0.02;
+          pos.y += sin(t*2.0)*0.015;
 
-      const material = new THREE.PointsMaterial({
-        size: 0.05,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.6,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
+          vAlpha = 0.55 + 0.45*sin(t*2.0);
+          vCol = vec3(1.0, 0.75 + 0.25*sin(t*0.8), 0.45);
+
+          vec4 mvPosition = modelViewMatrix * vec4(position + pos, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `;
+      const fs = `
+        precision mediump float; varying float vAlpha; varying vec3 vCol;
+        void main(){
+          vec2 uv = gl_PointCoord*2.0-1.0; // not used (plane)
+          gl_FragColor = vec4(vCol, vAlpha);
+        }
+      `;
+      const mat = new THREE.ShaderMaterial({
+        uniforms:u, vertexShader:vs, fragmentShader:fs, depthWrite:false, transparent:true, blending:THREE.AdditiveBlending
+      });
+      const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false;
+      mesh.userData.tick = (t)=> { mat.uniforms.uTime.value = t; };
+      return mesh;
+    }
+
+    /* =========================
+       Audio: synthesized (no files)
+       - Ambient pad (around camera)
+       - Placement chime (positional)
+    ==========================*/
+    async function createAudioKit() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Unlock on iOS/Android
+      await ctx.resume().catch(()=>{});
+
+      // Master gain
+      const master = ctx.createGain(); master.gain.value = 0.6; master.connect(ctx.destination);
+
+      // Ambient pad (three detuned sines)
+      const padGain = ctx.createGain(); padGain.gain.value = 0.12; padGain.connect(master);
+      const freqs = [196.0, 246.94, 329.63]; // G3, B3, E4-ish (calm)
+      const padOsc = freqs.map((f,i)=>{
+        const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+        const g = ctx.createGain(); g.gain.value = 0.0;
+        o.connect(g).connect(padGain); o.start();
+        // slow fade-in & LFO tremble
+        const lfo = ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value = 0.08+0.03*i;
+        const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.03;
+        lfo.connect(lfoGain).connect(g.gain);
+        g.gain.setTargetAtTime(0.18, ctx.currentTime, 0.8);
+        lfo.start();
+        return {o,g,lfo};
       });
 
-      const particles = new THREE.Points(geometry, material);
-      particles.userData.speeds = [];
-      particles.userData.phases = [];
-      
-      for (let i = 0; i < particleCount; i++) {
-        particles.userData.speeds.push(Math.random() * 0.2 + 0.15);
-        particles.userData.phases.push(Math.random() * Math.PI * 2);
+      function playChimeAt(position, camera, listener) {
+        // Quick bell using 2 oscillators & exponential decay
+        const o1 = ctx.createOscillator(); o1.type='sine'; o1.frequency.setValueAtTime(1400, ctx.currentTime);
+        const o2 = ctx.createOscillator(); o2.type='sine'; o2.frequency.setValueAtTime(2100, ctx.currentTime);
+        const g  = ctx.createGain(); g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.6, ctx.currentTime + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.0);
+
+        // Positioning via PannerNode
+        const p = new PannerNode(ctx, {
+          panningModel:'HRTF', distanceModel:'exponential',
+          refDistance:0.6, maxDistance:6, rolloffFactor:1.4
+        });
+        o1.connect(g); o2.connect(g); g.connect(p).connect(master);
+
+        // place relative to camera (approx)
+        const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+        p.positionX.value = position.x; p.positionY.value = position.y; p.positionZ.value = position.z;
+
+        o1.start(); o2.start(); o1.stop(ctx.currentTime + 1.1); o2.stop(ctx.currentTime + 1.1);
       }
 
-      return particles;
+      return { ctx, master, playChimeAt };
     }
 
-    // Interactive ripple effect when user gets close
-    function createRippleEffect() {
-      const geo = new THREE.RingGeometry(0.1, 0.12, 32);
-      geo.rotateX(-Math.PI / 2);
-      const mat = new THREE.MeshBasicMaterial({ 
-        color: 0xffd166, 
-        transparent: true, 
-        opacity: 0,
-        side: THREE.DoubleSide
-      });
-      const ripple = new THREE.Mesh(geo, mat);
-      ripple.visible = false;
-      return ripple;
-    }
+    /* =========================
+       App
+    ==========================*/
+    (function main(){
+      const gate = document.getElementById('gate');
+      const gateText = document.getElementById('gateText');
+      const enter = document.getElementById('enter');
+      const cue = document.getElementById('cue');
+      const status = document.getElementById('status');
+      const controls = document.getElementById('controls');
+      const btnSmaller = document.getElementById('smaller');
+      const btnBigger  = document.getElementById('bigger');
+      const btnRotL    = document.getElementById('rotL');
+      const btnRotR    = document.getElementById('rotR');
+      const btnStyle   = document.getElementById('style');
+      const btnReset   = document.getElementById('reset');
 
-    (function setup() {
-      const loader = document.getElementById('loader');
-      const loaderText = document.getElementById('loaderText');
-      const enterBtn = document.getElementById('enterBtn');
-      const centerCue = document.getElementById('centerCue');
-      const statusBadge = document.getElementById('statusBadge');
-
-      // Pre-checks
       if (!('xr' in navigator)) {
-        loaderText.innerHTML = "WebXR not available. Use <b>Android Chrome</b> over HTTPS.";
-        enterBtn.style.display = "none";
+        gateText.innerHTML = "WebXR not available. Use <b>Android Chrome</b> over HTTPS.";
+        enter.style.display='none';
         return;
       }
 
-      // Require a user gesture to start AR
-      enterBtn.addEventListener('click', async () => {
-        enterBtn.disabled = true;
-        loaderText.textContent = "Starting AR…";
+      let audioKit = null;
+
+      enter.addEventListener('click', async () => {
+        enter.disabled = true;
+        gateText.textContent = "Starting AR…";
         try {
-          const supportsAR = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
-          if (!supportsAR) {
-            loaderText.innerHTML = "Your device/browser doesn't support WebXR AR. Try Android Chrome.";
-            return;
-          }
+          const ok = await navigator.xr.isSessionSupported('immersive-ar').catch(()=>false);
+          if (!ok) { gateText.innerHTML="Your device/browser doesn’t support WebXR AR. Try Android Chrome."; enter.disabled=false; return; }
+          // Init audio under user gesture too
+          audioKit = await createAudioKit();
           await startAR();
-        } catch (err) {
-          loaderText.innerHTML = "Camera permission denied or AR failed.<br/><small>" + String(err && err.message || err) + "</small>";
-          enterBtn.disabled = false;
+        } catch (e) {
+          gateText.innerHTML = "Camera permission denied or AR failed.<br/><small>"+(e?.message||e)+"</small>";
+          enter.disabled = false;
         }
       });
 
-      async function startAR() {
-        // THREE scene
+      async function startAR(){
+        // Scene
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera();
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.setSize(innerWidth, innerHeight);
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
 
         scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.0));
-        const reticle = createReticle(); 
-        scene.add(reticle);
+        const reticle = createReticle(); scene.add(reticle);
 
-        statusBadge.textContent = "Drawing rangoli…";
-        const rangoliCanvas = drawRangoliTexture(1024);
-        const rangoliTex = new THREE.CanvasTexture(rangoliCanvas);
-        rangoliTex.anisotropy = 8;
+        // Style index cycles 0..2 for shader palette
+        let styleIndex = 0;
 
-        const rangoliMaterial = new THREE.MeshBasicMaterial({ map: rangoliTex, transparent: true, opacity: 1 });
-
-        function createRangoliMesh() {
-          const sizeMeters = 0.8;
-          const geo = new THREE.PlaneGeometry(sizeMeters, sizeMeters);
-          const mesh = new THREE.Mesh(geo, rangoliMaterial.clone());
-          mesh.rotation.x = -Math.PI / 2;
+        // Make a rangoli (plane) with shader mat + extras
+        function createRangoli() {
+          const size = 0.95; // ~95cm across for wow
+          const geo = new THREE.PlaneGeometry(size, size);
+          const mat = makeRangoliMaterial(styleIndex);
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.rotation.x = -Math.PI/2;
           mesh.renderOrder = 1;
-          
-          const shadow = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
-          shadow.position.y = -0.001; 
-          shadow.scale.set(1.04,1.04,1.04); 
-          mesh.add(shadow);
-          
-          mesh.scale.set(0.6,0.6,0.6); 
-          mesh.userData.spawnT = performance.now(); 
-          mesh.userData.animIn = true;
-          mesh.userData.lastProximityCheck = 0;
-          mesh.userData.glowIntensity = 0;
-          
-          // Add optimized particles
-          const particles = createFlowingParticles();
-          particles.position.y = 0.05;
-          mesh.add(particles);
-          mesh.userData.particles = particles;
-          
-          // Add interactive ripple
-          const ripple = createRippleEffect();
+
+          // Halo/“shadow” seat
+          const halo = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:0.16 }));
+          halo.position.y = -0.001; halo.scale.set(1.05,1.05,1.05);
+          mesh.add(halo);
+
+          // Sparks
+          const sparks = makeSparks(100);
+          sparks.position.y = 0.04;
+          mesh.add(sparks);
+
+          // Ripple ring (animated scale/opacity)
+          const ripGeo = new THREE.RingGeometry(0.1, 0.12, 48); ripGeo.rotateX(-Math.PI/2);
+          const ripMat = new THREE.MeshBasicMaterial({ color:0xffd166, transparent:true, opacity:0 });
+          const ripple = new THREE.Mesh(ripGeo, ripMat); ripple.visible=false;
           mesh.add(ripple);
-          mesh.userData.ripple = ripple;
-          
+
+          // Entrance anim
+          mesh.scale.set(0.55,0.55,0.55);
+          mesh.userData.spawn = performance.now();
+          mesh.userData.animIn = true;
+
+          // Audio: chime on place (positional feel via web audio panner)
+          mesh.userData.chime = ()=> {
+            try {
+              const pos = new THREE.Vector3(); mesh.getWorldPosition(pos);
+              audioKit?.playChimeAt(pos, camera);
+            } catch {}
+          }
+
+          // Update hook
+          mesh.userData.tick = (t, now, camPos)=>{
+            mat.userData.tick?.(t);
+            sparks.userData.tick?.(t);
+
+            // Proximity glow & ripple
+            const mp = new THREE.Vector3(); mesh.getWorldPosition(mp);
+            const dist = camPos.distanceTo(mp);
+            const prox = clamp(1 - dist/1.6, 0, 1); // within ~1.6m
+            // Increase alpha slightly when close
+            mat.userData.setAlpha( 1.0 + prox*0.25 );
+            // Trigger ripple if very close
+            if (prox > 0.6 && (!ripple.userData?.tStart || now - ripple.userData.tStart > 1400)) {
+              ripple.visible = true; ripple.userData = { tStart: now };
+            }
+            if (ripple.visible) {
+              const age = (now - ripple.userData.tStart)/1000;
+              if (age < 1.3) {
+                const s = 1 + age*2.1;
+                ripple.scale.set(s,s,1);
+                ripple.material.opacity = (1 - age/1.3)*0.65;
+              } else {
+                ripple.visible = false;
+              }
+            }
+
+            // Entrance ease
+            if (mesh.userData.animIn) {
+              const dt = Math.min((now - mesh.userData.spawn) / 520, 1);
+              const s = 0.55 + (1 - 0.55)*(1 - Math.pow(1-dt, 3));
+              mesh.scale.set(s,s,s);
+              if (dt >= 1) mesh.userData.animIn = false;
+            }
+          };
+
+          // Public API: style swap
+          mesh.userData.setStyle = (i)=> { styleIndex = i; mat.userData.setStyle(i); };
+
           return mesh;
         }
 
+        // XR session with hit test and dom-overlay controls
         const sessionInit = {
-          requiredFeatures: ['hit-test'],
-          optionalFeatures: ['light-estimation']
+          requiredFeatures:['hit-test'],
+          optionalFeatures:['dom-overlay','light-estimation'],
+          domOverlay:{ root: document.body }
         };
-
         const session = await navigator.xr.requestSession('immersive-ar', sessionInit);
-        statusBadge.textContent = "Point phone to scan…";
-
+        status.textContent = "Point phone to scan…";
         renderer.xr.setReferenceSpaceType('local');
         await renderer.xr.setSession(session);
 
@@ -302,131 +470,76 @@
         const viewerSpace = await session.requestReferenceSpace('viewer');
         const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
 
-        const placedObjects = [];
-        session.addEventListener('select', () => {
+        const placed = [];
+        let selected = null;
+
+        session.addEventListener('select', ()=>{
           if (!reticle.visible) return;
-          const mesh = createRangoliMesh();
-          mesh.position.setFromMatrixPosition(reticle.matrix);
+          const m = createRangoli();
+          m.position.setFromMatrixPosition(reticle.matrix);
+
+          // Align to surface normal
           const rot = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
-          mesh.quaternion.copy(rot);
-          const up = new THREE.Vector3(0,1,0).applyQuaternion(mesh.quaternion);
+          m.quaternion.copy(rot);
+          const up = new THREE.Vector3(0,1,0).applyQuaternion(m.quaternion);
           if (Math.abs(up.y) < 0.4) {
             const normal = new THREE.Vector3(0,0,-1).applyQuaternion(rot).normalize();
-            const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), normal);
-            mesh.quaternion.copy(targetQuat);
-            mesh.position.addScaledVector(normal, 0.002);
+            const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), normal);
+            m.quaternion.copy(q); m.position.addScaledVector(normal, 0.002);
           } else {
-            mesh.rotation.x = -Math.PI / 2;
-            mesh.position.y += 0.001;
+            m.rotation.x = -Math.PI/2; m.position.y += 0.001;
           }
-          scene.add(mesh); 
-          placedObjects.push(mesh);
-          centerCue.style.opacity = "0"; 
-          setTimeout(()=>centerCue.style.display="none", 400);
+
+          scene.add(m); placed.push(m); selected = m;
+          m.userData.chime?.(); vibrate?.(20);
+          cue.style.opacity="0"; setTimeout(()=> cue.style.display="none", 400);
         });
 
-        loader.style.opacity = "0"; 
-        setTimeout(()=>loader.remove(), 200);
+        // Controls
+        controls.style.display = "flex";
+        btnSmaller.onclick = ()=> { if(!selected) return; const s=selected.scale.x; const ns=clamp(s-0.08,0.3,2.8); selected.scale.set(ns,ns,ns); };
+        btnBigger.onclick  = ()=> { if(!selected) return; const s=selected.scale.x; const ns=clamp(s+0.08,0.3,2.8); selected.scale.set(ns,ns,ns); };
+        btnRotL.onclick    = ()=> { if(!selected) return; const up = new THREE.Vector3(0,1,0).applyQuaternion(selected.quaternion); (Math.abs(up.y)<0.4?selected.rotateZ:-selected.rotateY).call(selected, THREE.MathUtils.degToRad(8)); };
+        btnRotR.onclick    = ()=> { if(!selected) return; const up = new THREE.Vector3(0,1,0).applyQuaternion(selected.quaternion); (Math.abs(up.y)<0.4?selected.rotateZ:selected.rotateY).call(selected, THREE.MathUtils.degToRad(8)); };
+        btnStyle.onclick   = ()=> { if (selected) { const next = (styleIndex+1)%3; selected.userData.setStyle(next); styleIndex = next; } else { styleIndex=(styleIndex+1)%3; } };
+        btnReset.onclick   = ()=> {
+          for (const m of placed) {
+            m.traverse(o=>{ o.geometry?.dispose?.(); if (o.material?.map) o.material.map.dispose(); o.material?.dispose?.(); });
+            scene.remove(m);
+          }
+          placed.length=0; selected=null;
+          cue.style.display="grid"; cue.style.opacity="1";
+        };
 
-        renderer.setAnimationLoop((t, frame) => {
-          if (reticle.tick) reticle.tick(t/1000);
+        // Hide gate
+        gate.style.opacity="0"; setTimeout(()=>gate.remove(), 180);
+
+        // Ticker
+        renderer.setAnimationLoop((t, frame)=>{
+          const time = t/1000; // seconds
+          reticle.tick?.(time);
+
           if (frame) {
             const hits = frame.getHitTestResults(hitTestSource);
             if (hits.length) {
               const pose = hits[0].getPose(referenceSpace);
-              reticle.visible = true;
-              reticle.matrix.fromArray(pose.transform.matrix);
-            } else {
-              reticle.visible = false;
-            }
+              reticle.visible = true; reticle.matrix.fromArray(pose.transform.matrix);
+            } else { reticle.visible = false; }
           }
-          
+
+          // camera world pos
+          const camPos = new THREE.Vector3(); camera.getWorldPosition(camPos);
+
+          // update each rangoli
           const now = performance.now();
-          const time = t / 1000;
-          
-          // Get camera position for proximity detection
-          const cameraPos = new THREE.Vector3();
-          camera.getWorldPosition(cameraPos);
-          
-          for (const obj of placedObjects) {
-            // Scale-in animation
-            if (obj.userData.animIn) {
-              const dt = Math.min((now - obj.userData.spawnT) / 450, 1);
-              const s = 0.6 + (1 - 0.6) * (1 - Math.pow(1 - dt, 3));
-              obj.scale.set(s,s,s);
-              if (dt >= 1) obj.userData.animIn = false;
-            }
-            
-            // Proximity-based interaction (check every 100ms)
-            if (now - obj.userData.lastProximityCheck > 100) {
-              obj.userData.lastProximityCheck = now;
-              const objPos = new THREE.Vector3();
-              obj.getWorldPosition(objPos);
-              const distance = cameraPos.distanceTo(objPos);
-              
-              // Interactive glow when user is close (within 1.5 meters)
-              if (distance < 1.5) {
-                const proximity = 1 - (distance / 1.5);
-                obj.userData.glowIntensity = Math.min(obj.userData.glowIntensity + 0.05, proximity * 0.8);
-                
-                // Trigger ripple effect
-                if (obj.userData.ripple && proximity > 0.5) {
-                  obj.userData.ripple.visible = true;
-                  obj.userData.ripple.userData.rippleStart = now;
-                }
-              } else {
-                obj.userData.glowIntensity = Math.max(obj.userData.glowIntensity - 0.03, 0);
-              }
-              
-              // Apply glow to rangoli material
-              if (obj.material) {
-                obj.material.opacity = 1 + obj.userData.glowIntensity * 0.3;
-              }
-            }
-            
-            // Animate ripple effect
-            if (obj.userData.ripple && obj.userData.ripple.visible) {
-              const rippleAge = (now - obj.userData.ripple.userData.rippleStart) / 1000;
-              if (rippleAge < 1.5) {
-                const scale = 1 + rippleAge * 2;
-                obj.userData.ripple.scale.set(scale, scale, 1);
-                obj.userData.ripple.material.opacity = (1 - rippleAge / 1.5) * 0.6;
-              } else {
-                obj.userData.ripple.visible = false;
-              }
-            }
-            
-            // Animate flowing particles (throttled updates)
-            if (obj.userData.particles && Math.random() > 0.5) {
-              const particles = obj.userData.particles;
-              const positions = particles.geometry.attributes.position.array;
-              const speeds = particles.userData.speeds;
-              const phases = particles.userData.phases;
-              
-              // Update fewer particles per frame for performance
-              const updateCount = Math.floor(positions.length / 9);
-              for (let i = 0; i < updateCount; i++) {
-                const idx = Math.floor(Math.random() * (positions.length / 3));
-                const i3 = idx * 3;
-                const angle = time * speeds[idx] + phases[idx];
-                const radius = 1.2 + Math.sin(time * 0.3 + idx * 0.1) * 0.5;
-                positions[i3] = Math.cos(angle) * radius;
-                positions[i3 + 1] = 0.15 + Math.sin(time + idx * 0.2) * 0.08;
-                positions[i3 + 2] = Math.sin(angle) * radius;
-              }
-              particles.geometry.attributes.position.needsUpdate = true;
-              particles.rotation.y = time * 0.08;
-              
-              // Boost particle glow when user is close
-              particles.material.opacity = 0.6 + obj.userData.glowIntensity * 0.4;
-            }
-          }
-          
+          for (const m of placed) { m.userData.tick?.(time, now, camPos); }
+
           renderer.render(scene, camera);
         });
 
-        window.addEventListener('resize', () => renderer.setSize(window.innerWidth, window.innerHeight));
-        window.addEventListener('beforeunload', () => { try { session.end(); } catch {} });
+        // Resize & cleanup
+        addEventListener('resize', ()=> renderer.setSize(innerWidth, innerHeight));
+        addEventListener('beforeunload', ()=> { try{ session.end(); }catch{} });
       }
     })();
   </script>
