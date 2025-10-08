@@ -13,61 +13,37 @@
     :root {
       --bg: #0b0b0e;
       --fg: #f7f2ea;
-      --accent: #e15a97;  /* rani pink */
-      --accent-2: #ffb703;/* marigold */
-      --muted: #9b9ba3;
-      --btn-bg: #17171f;
-      --btn-brd:#34343d;
+      --accent: #e15a97;
+      --accent-2: #ffb703;
+      --muted: #8b8b93;
     }
-    html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--fg);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Arial;
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial;
     }
-    canvas{ display:block; }
+    canvas { display: block; }
 
-    /* Top bar */
-    .topbar{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;
-      padding:10px 12px; gap:10px; background:linear-gradient(180deg,rgba(12,12,14,.95) 0%, rgba(12,12,14,.4) 100%);
-      backdrop-filter: blur(6px); z-index:5; pointer-events:none}
-    .brand{pointer-events:auto;display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.3px}
-    .brand .dot{width:10px;height:10px;border-radius:50%;
-      background:radial-gradient(circle at 30% 30%, #fff 0, #ffd166 40%, #f94144 100%);
-      box-shadow:0 0 8px rgba(255,210,50,.9)}
+    /* UI */
+    .overlay{position:fixed;inset:0;pointer-events:none;display:grid;place-items:end center;padding:env(safe-area-inset-bottom)}
+    .hud{width:100%;box-sizing:border-box;padding:14px 16px 18px;display:flex;gap:10px;justify-content:center;align-items:center;background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(12,12,14,0.85) 30%, rgba(12,12,14,1) 100%);pointer-events:none}
+    .pill{pointer-events:auto;border:1px solid #262630;background:#13131a;color:var(--fg);border-radius:999px;padding:10px 14px;font-size:14px;opacity:.95;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+    .pill b{color:var(--accent-2)}
+    .topbar{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;gap:10px;background:linear-gradient(180deg,rgba(12,12,14,.95) 0%, rgba(12,12,14,.4) 100%);backdrop-filter:blur(6px);z-index:3;pointer-events:none}
+    .brand{pointer-events:auto;font-weight:700;letter-spacing:.3px;color:var(--fg);font-size:15px;display:inline-flex;align-items:center;gap:10px}
+    .brand .dot{width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #fff 0, #ffd166 40%, #f94144 100%);box-shadow:0 0 8px rgba(255,210,50,.9)}
     .badge{pointer-events:auto;border-radius:999px;border:1px solid #2c2c34;padding:6px 10px;font-size:12px;color:var(--muted)}
-
-    /* Loader + enter gate */
-    .loader{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%, #141420, #0b0b0e 60%);z-index:10;color:var(--fg);text-align:center;padding:24px}
+    .center-cue{position:fixed;inset:0;display:grid;place-items:center;z-index:2;pointer-events:none;transition:opacity .3s ease}
+    .center-cue .card{pointer-events:auto;background:rgba(10,10,14,.75);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px 18px;text-align:center;max-width:280px;color:var(--fg);box-shadow:0 10px 30px rgba(0,0,0,.35);animation:pop .38s ease-out both}
+    @keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+    .center-cue h3{margin:0 0 6px;font-size:18px}
+    .center-cue p{margin:0;font-size:13px;color:var(--muted)}
+    .loader{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%, #141420, #0b0b0e 60%);z-index:4;color:var(--fg);text-align:center;padding:24px}
     .chakra{width:84px;height:84px;border-radius:50%;border:3px dashed #ffd166;animation:spin 2.2s linear infinite;box-shadow:0 0 0 2px rgba(255,255,255,.03) inset;position:relative;margin:auto}
     .chakra::after{content:"";position:absolute;inset:14px;border-radius:50%;border:2px dotted #e15a97;animation:spin 3.6s linear infinite reverse;filter:drop-shadow(0 0 12px rgba(225,90,151,.35))}
     @keyframes spin{to{transform:rotate(360deg)}}
     .loader p{margin-top:16px;font-size:14px;color:var(--muted)}
-    .btn{pointer-events:auto;display:inline-block;margin-top:14px;padding:12px 16px;border-radius:12px;border:1px solid var(--btn-brd);background:var(--btn-bg);color:#fff;font-weight:600}
+    .btn{pointer-events:auto;display:inline-block;margin-top:14px;padding:12px 16px;border-radius:12px;border:1px solid #34343d;background:#17171f;color:#fff;font-weight:600;cursor:pointer}
     .btn:active{transform:scale(.98)}
     .hint{margin-top:10px;font-size:12px;color:#9b9ba3}
-
-    /* Center cue */
-    .center-cue{position:fixed;inset:0;display:grid;place-items:center;z-index:4;pointer-events:none;transition:opacity .3s ease}
-    .center-cue .card{pointer-events:auto;background:rgba(10,10,14,.75);backdrop-filter:blur(8px);
-      border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:12px 14px;text-align:center;
-      max-width:280px;color:var(--fg);box-shadow:0 10px 30px rgba(0,0,0,.35);animation:pop .38s ease-out both}
-    .center-cue h3{margin:0 0 4px;font-size:17px}
-    .center-cue p{margin:0;font-size:13px;color:var(--muted)}
-    @keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
-
-    /* Bottom controls (dom-overlay UI) */
-    .controlbar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px 16px;display:flex;justify-content:center;gap:10px;
-      background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(12,12,14,.85) 35%, rgba(12,12,14,1) 100%);
-      pointer-events:none; z-index:6}
-    .controlbar .control{pointer-events:auto;min-width:44px;height:44px;border-radius:12px;border:1px solid var(--btn-brd);
-      background:var(--btn-bg); color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 12px}
-    .control:active{transform:scale(.98)}
-    .control.wide{min-width:96px}
-    .control .sub{font-weight:500;color:var(--muted);font-size:11px;margin-left:6px}
-
-    .overlay{position:fixed;inset:0;pointer-events:none;display:grid;place-items:end center;padding:env(safe-area-inset-bottom)}
-    .hud{width:100%;box-sizing:border-box;padding:6px 12px;display:flex;gap:10px;justify-content:center;align-items:center;pointer-events:none}
-    .pill{pointer-events:auto;border:1px solid #262630;background:#13131a;color:var(--fg);border-radius:999px;padding:8px 12px;font-size:13px;opacity:.95;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
-    .pill b{color:var(--accent-2)}
-
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   </style>
 </head>
@@ -78,14 +54,14 @@
     <div class="badge" id="statusBadge">Ready</div>
   </div>
 
-  <!-- Loader / Enter gate -->
+  <!-- Loader (now doubles as "Enter AR" gate) -->
   <div class="loader" id="loader" role="status" aria-live="polite">
     <div class="chakra" aria-hidden="true"></div>
     <p id="loaderText">Tap to start AR (needed for permission)</p>
     <button class="btn" id="enterBtn">Enter AR</button>
     <div class="hint">
-      If you denied camera before: Chrome ⋮ → Site settings → Clear & reset.<br/>
-      Must be HTTPS + Android Chrome with Google Play Services for AR.
+      If you previously denied camera: Chrome ⋮ → Site settings → Reset permissions.
+      <br/>Must be HTTPS + Android Chrome with ARCore.
     </div>
   </div>
 
@@ -93,24 +69,14 @@
   <div class="center-cue" id="centerCue">
     <div class="card">
       <h3>Move your phone</h3>
-      <p>Detect a floor/wall & <b>tap</b> to place. Use controls to rotate/scale.</p>
+      <p>Look around to detect a floor/wall. <b>Tap</b> to place the rangoli.</p>
     </div>
   </div>
 
-  <!-- Dom-overlay control bar -->
-  <div class="controlbar" id="controls" style="display:none">
-    <button class="control" id="btnSmaller" title="Smaller">–</button>
-    <button class="control" id="btnBigger"  title="Bigger">+</button>
-    <button class="control" id="btnRotL"    title="Rotate Left">↺</button>
-    <button class="control" id="btnRotR"    title="Rotate Right">↻</button>
-    <button class="control wide" id="btnPattern" title="Change Pattern">🎨 <span class="sub">Style</span></button>
-    <button class="control" id="btnReset"   title="Reset">⟲</button>
-  </div>
-
-  <!-- Tip pill -->
+  <!-- HUD -->
   <div class="overlay">
     <div class="hud">
-      <div class="pill">Tip: Use a <b>bright floor</b> for best tracking</div>
+      <div class="pill">Tap to place flowing rangoli patterns ✨</div>
     </div>
   </div>
 
@@ -118,7 +84,6 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
 
   <script>
-    /* ========= Reticle ========= */
     function createReticle() {
       const geo = new THREE.RingGeometry(0.09, 0.1, 64);
       geo.rotateX(-Math.PI / 2);
@@ -133,13 +98,10 @@
       group.visible = false; return group;
     }
 
-    /* ========= Procedural Rangoli (3 styles) ========= */
-    function drawRangoliTexture(size = 1024, style = 0) {
+    function drawRangoliTexture(size = 1024) {
       const c = document.createElement('canvas'); c.width = c.height = size;
       const ctx = c.getContext('2d'); ctx.clearRect(0,0,size,size);
       const cx = size/2, cy = size/2, R = size*0.46;
-
-      // helpers
       function petal(angle, r1, r2, w, colorA, colorB){
         ctx.save(); ctx.translate(cx,cy); ctx.rotate(angle);
         const grad = ctx.createLinearGradient(0,-r1,0,-r2);
@@ -149,6 +111,17 @@
         ctx.bezierCurveTo(-w,-r2*0.35, -w,-r1*0.65, 0,-r1);
         ctx.closePath(); ctx.fill(); ctx.restore();
       }
+      const radial = ctx.createRadialGradient(cx,cy,R*.05,cx,cy,R*1.02);
+      radial.addColorStop(0,'rgba(255,255,255,0.06)');
+      radial.addColorStop(0.65,'rgba(255,210,100,0.04)');
+      radial.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle = radial; ctx.beginPath(); ctx.arc(cx,cy,R*1.05,0,Math.PI*2); ctx.fill();
+      const petals = 12;
+      for(let i=0;i<petals;i++){ const a=(i/petals)*Math.PI*2; petal(a, R*.92, R*.55, R*.25, '#ff6b6b', '#f94144'); }
+      for(let i=0;i<petals;i++){ const a=(i/petals)*Math.PI*2+Math.PI/petals; petal(a, R*.6, R*.34, R*.16, '#ffd166', '#ffb703'); }
+      for(let i=0;i<petals;i++){ const a=(i/petals)*Math.PI*2; petal(a, R*.36, R*.15, R*.11, '#7bd389', '#06d6a0'); }
+      ctx.strokeStyle='rgba(255,255,255,0.82)'; ctx.lineWidth=size*0.006;
+      [0.52,0.38,0.26,0.18,0.12].forEach(mult=>{ctx.beginPath();ctx.arc(cx,cy,R*mult,0,Math.PI*2);ctx.stroke();});
       function dottedCircle(r,dots,color){
         for(let i=0;i<dots;i++){const a=(i/dots)*Math.PI*2; const x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r;
           const g=ctx.createRadialGradient(x,y,0,x,y,size*0.02);
@@ -156,92 +129,97 @@
           ctx.beginPath(); ctx.arc(x,y,size*0.012,0,Math.PI*2); ctx.fill();
         }
       }
-
-      // background glow
-      const radial = ctx.createRadialGradient(cx,cy,R*.05,cx,cy,R*1.02);
-      radial.addColorStop(0,'rgba(255,255,255,0.06)');
-      radial.addColorStop(0.65,'rgba(255,210,100,0.04)');
-      radial.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle = radial; ctx.beginPath(); ctx.arc(cx,cy,R*1.05,0,Math.PI*2); ctx.fill();
-
-      const petals = 12;
-
-      if (style === 0) {
-        // Classic lotus + marigold
-        for(let i=0;i<petals;i++){ petal((i/petals)*Math.PI*2, R*.92, R*.55, R*.25, '#ff6b6b', '#f94144'); }
-        for(let i=0;i<petals;i++){ petal((i/petals)*Math.PI*2+Math.PI/petals, R*.6, R*.34, R*.16, '#ffd166', '#ffb703'); }
-        for(let i=0;i<petals;i++){ petal((i/petals)*Math.PI*2, R*.36, R*.15, R*.11, '#7bd389', '#06d6a0'); }
-        ctx.strokeStyle='rgba(255,255,255,0.82)'; ctx.lineWidth=size*0.006;
-        [0.52,0.38,0.26,0.18,0.12].forEach(mult=>{ctx.beginPath();ctx.arc(cx,cy,R*mult,0,Math.PI*2);ctx.stroke();});
-        dottedCircle(R*0.48,36,'#ffb703'); dottedCircle(R*0.33,24,'#e15a97'); dottedCircle(R*0.22,16,'#90e0ef');
-        const g2 = ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.16);
-        g2.addColorStop(0,'#fff'); g2.addColorStop(0.4,'#ffd166'); g2.addColorStop(1,'#e15a97');
-        ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(cx,cy,R*0.16,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#2d0e36'; ctx.beginPath(); ctx.arc(cx,cy,R*0.04,0,Math.PI*2); ctx.fill();
-      } else if (style === 1) {
-        // Peacock hues + kolam grid hints
-        for(let i=0;i<petals;i++){ petal((i/petals)*Math.PI*2, R*.95, R*.58, R*.28, '#6fffe9', '#3a86ff'); }
-        for(let i=0;i<petals;i++){ petal((i/petals)*Math.PI*2+Math.PI/petals, R*.62, R*.36, R*.15, '#ffe66d', '#ff9f1c'); }
-        ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=size*0.0055;
-        [0.5,0.42,0.34,0.26,0.18,0.12].forEach(mult=>{ctx.beginPath();ctx.arc(cx,cy,R*mult,0,Math.PI*2);ctx.stroke();});
-        dottedCircle(R*0.47,48,'#ff9f1c'); dottedCircle(R*0.31,24,'#8338ec');
-        // simple kolam-like diamonds
-        ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=size*0.0045;
-        for(let k=0;k<8;k++){
-          const a=(k/8)*Math.PI*2;
-          ctx.save(); ctx.translate(cx,cy); ctx.rotate(a);
-          ctx.beginPath(); ctx.moveTo(0,-R*0.22); ctx.lineTo(R*0.12,0); ctx.lineTo(0,R*0.22); ctx.lineTo(-R*0.12,0); ctx.closePath(); ctx.stroke();
-          ctx.restore();
-        }
-      } else {
-        // Deep magenta / teal + heavier dots
-        for(let i=0;i<petals;i++){ petal((i/petals)*Math.PI*2, R*.9, R*.52, R*.24, '#ff4d6d', '#c9184a'); }
-        for(let i=0;i<petals;i++){ petal((i/petals)*Math.PI*2+Math.PI/petals, R*.57, R*.32, R*.14, '#80ed99', '#06d6a0'); }
-        ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=size*0.006;
-        [0.5,0.37,0.25,0.17,0.11].forEach(mult=>{ctx.beginPath();ctx.arc(cx,cy,R*mult,0,Math.PI*2);ctx.stroke();});
-        dottedCircle(R*0.49,40,'#ffd166'); dottedCircle(R*0.29,20,'#06d6a0');
-        const g3 = ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.18);
-        g3.addColorStop(0,'#ffffff'); g3.addColorStop(0.5,'#c9184a'); g3.addColorStop(1,'#4cc9f0');
-        ctx.fillStyle=g3; ctx.beginPath(); ctx.arc(cx,cy,R*0.18,0,Math.PI*2); ctx.fill();
-      }
-
+      dottedCircle(R*0.48,36,'#ffb703'); dottedCircle(R*0.33,24,'#e15a97'); dottedCircle(R*0.22,16,'#90e0ef');
+      const g2 = ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.16);
+      g2.addColorStop(0,'#fff'); g2.addColorStop(0.4,'#ffd166'); g2.addColorStop(1,'#e15a97');
+      ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(cx,cy,R*0.16,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#2d0e36'; ctx.beginPath(); ctx.arc(cx,cy,R*0.04,0,Math.PI*2); ctx.fill();
       return c;
     }
 
-    /* ========= App ========= */
-    (function init() {
+    // Flowing particle system for ambient Diwali vibe
+    function createFlowingParticles() {
+      const particleCount = 80;
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const colors = new Float32Array(particleCount * 3);
+      const sizes = new Float32Array(particleCount);
+      
+      const diwaliColors = [
+        new THREE.Color(0xffd166), // gold
+        new THREE.Color(0xe15a97), // pink
+        new THREE.Color(0xff6b6b), // red
+        new THREE.Color(0x90e0ef), // cyan
+        new THREE.Color(0x7bd389)  // green
+      ];
+
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * 3;
+        positions[i3] = Math.cos(angle) * radius;
+        positions[i3 + 1] = Math.random() * 0.3 - 0.15;
+        positions[i3 + 2] = Math.sin(angle) * radius;
+        
+        const color = diwaliColors[Math.floor(Math.random() * diwaliColors.length)];
+        colors[i3] = color.r;
+        colors[i3 + 1] = color.g;
+        colors[i3 + 2] = color.b;
+        
+        sizes[i] = Math.random() * 0.04 + 0.02;
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+      const material = new THREE.PointsMaterial({
+        size: 0.04,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        sizeAttenuation: true
+      });
+
+      const particles = new THREE.Points(geometry, material);
+      particles.userData.speeds = [];
+      particles.userData.phases = [];
+      
+      for (let i = 0; i < particleCount; i++) {
+        particles.userData.speeds.push(Math.random() * 0.3 + 0.2);
+        particles.userData.phases.push(Math.random() * Math.PI * 2);
+      }
+
+      return particles;
+    }
+
+    (function setup() {
       const loader = document.getElementById('loader');
       const loaderText = document.getElementById('loaderText');
       const enterBtn = document.getElementById('enterBtn');
       const centerCue = document.getElementById('centerCue');
       const statusBadge = document.getElementById('statusBadge');
-      const controls = document.getElementById('controls');
 
-      // Control buttons
-      const btnSmaller = document.getElementById('btnSmaller');
-      const btnBigger  = document.getElementById('btnBigger');
-      const btnRotL    = document.getElementById('btnRotL');
-      const btnRotR    = document.getElementById('btnRotR');
-      const btnPattern = document.getElementById('btnPattern');
-      const btnReset   = document.getElementById('btnReset');
-
+      // Pre-checks
       if (!('xr' in navigator)) {
         loaderText.innerHTML = "WebXR not available. Use <b>Android Chrome</b> over HTTPS.";
         enterBtn.style.display = "none";
         return;
       }
 
+      // Require a user gesture to start AR
       enterBtn.addEventListener('click', async () => {
         enterBtn.disabled = true;
         loaderText.textContent = "Starting AR…";
         try {
-          const ok = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
-          if (!ok) {
-            loaderText.innerHTML = "Your device/browser doesn’t support WebXR AR. Try Android Chrome.";
-            enterBtn.disabled = false;
+          const supportsAR = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+          if (!supportsAR) {
+            loaderText.innerHTML = "Your device/browser doesn't support WebXR AR. Try Android Chrome.";
             return;
           }
-          await startAR(); // user activation scope
+          await startAR();
         } catch (err) {
           loaderText.innerHTML = "Camera permission denied or AR failed.<br/><small>" + String(err && err.message || err) + "</small>";
           enterBtn.disabled = false;
@@ -258,57 +236,70 @@
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // lights
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.0));
+        const reticle = createReticle(); 
+        scene.add(reticle);
 
-        // reticle
-        const reticle = createReticle(); scene.add(reticle);
-
-        // rangoli texture variants
-        let styleIndex = 0;
         statusBadge.textContent = "Drawing rangoli…";
-        const baseCanvas = drawRangoliTexture(1024, styleIndex);
-        const baseTex = new THREE.CanvasTexture(baseCanvas);
-        baseTex.anisotropy = 8; baseTex.encoding = THREE.sRGBEncoding;
+        const rangoliCanvas = drawRangoliTexture(1024);
+        const rangoliTex = new THREE.CanvasTexture(rangoliCanvas);
+        rangoliTex.anisotropy = 8;
 
-        function createMaterial() {
-          const c = drawRangoliTexture(1024, styleIndex);
-          const t = new THREE.CanvasTexture(c);
-          t.anisotropy = 8; t.encoding = THREE.sRGBEncoding;
-          return new THREE.MeshBasicMaterial({ map: t, transparent: true });
-        }
+        const rangoliMaterial = new THREE.MeshBasicMaterial({ map: rangoliTex, transparent: true, opacity: 1 });
 
         function createRangoliMesh() {
-          const sizeMeters = 0.9; // a bit bigger for wow
+          const sizeMeters = 0.8;
           const geo = new THREE.PlaneGeometry(sizeMeters, sizeMeters);
-          const mat = createMaterial();
-          const mesh = new THREE.Mesh(geo, mat);
+          const mesh = new THREE.Mesh(geo, rangoliMaterial.clone());
           mesh.rotation.x = -Math.PI / 2;
           mesh.renderOrder = 1;
-
-          // drop shadow halo
-          const sh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
-          sh.position.y = -0.001; sh.scale.set(1.04,1.04,1.04);
-          mesh.add(sh);
-
-          // entrance anim
-          mesh.scale.set(0.58,0.58,0.58);
-          mesh.userData.spawnT = performance.now();
+          
+          const shadow = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
+          shadow.position.y = -0.001; 
+          shadow.scale.set(1.04,1.04,1.04); 
+          mesh.add(shadow);
+          
+          mesh.scale.set(0.6,0.6,0.6); 
+          mesh.userData.spawnT = performance.now(); 
           mesh.userData.animIn = true;
-          mesh.userData.isRangoli = true;
-
+          
+          // Add flowing particles around each rangoli
+          const particles = createFlowingParticles();
+          particles.position.y = 0.05;
+          mesh.add(particles);
+          mesh.userData.particles = particles;
+          
+          // Add animated mandala overlay
+          const mandalaCanvas = document.createElement('canvas');
+          mandalaCanvas.width = mandalaCanvas.height = 512;
+          const mandalaTex = new THREE.CanvasTexture(mandalaCanvas);
+          const mandalaGeo = new THREE.PlaneGeometry(sizeMeters * 1.6, sizeMeters * 1.6);
+          const mandalaMat = new THREE.MeshBasicMaterial({ 
+            map: mandalaTex, 
+            transparent: true, 
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+          const mandalaOverlay = new THREE.Mesh(mandalaGeo, mandalaMat);
+          mandalaOverlay.position.y = 0.002;
+          mandalaOverlay.rotation.x = -Math.PI / 2;
+          mesh.add(mandalaOverlay);
+          mesh.userData.mandalaOverlay = mandalaOverlay;
+          mesh.userData.mandalaCanvas = mandalaCanvas;
+          mesh.userData.mandalaTex = mandalaTex;
+          
           return mesh;
         }
 
-        // XR session with DOM overlay for on-screen buttons
         const sessionInit = {
           requiredFeatures: ['hit-test'],
-          optionalFeatures: ['dom-overlay', 'light-estimation'],
-          domOverlay: { root: document.body }
+          optionalFeatures: ['light-estimation']
         };
-        const session = await navigator.xr.requestSession('immersive-ar', sessionInit);
 
+        const session = await navigator.xr.requestSession('immersive-ar', sessionInit);
         statusBadge.textContent = "Point phone to scan…";
+
         renderer.xr.setReferenceSpaceType('local');
         await renderer.xr.setSession(session);
 
@@ -316,24 +307,11 @@
         const viewerSpace = await session.requestReferenceSpace('viewer');
         const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
 
-        // Manage placements & “selected” item
-        const placed = [];
-        let selected = null;
-
-        function selectLast() {
-          selected = placed[placed.length - 1] || null;
-          // subtle highlight (scale pulse once)
-          if (selected) {
-            selected.userData.pulseT = performance.now();
-          }
-        }
-
+        const placedObjects = [];
         session.addEventListener('select', () => {
           if (!reticle.visible) return;
           const mesh = createRangoliMesh();
           mesh.position.setFromMatrixPosition(reticle.matrix);
-
-          // Align to surface
           const rot = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
           mesh.quaternion.copy(rot);
           const up = new THREE.Vector3(0,1,0).applyQuaternion(mesh.quaternion);
@@ -346,70 +324,15 @@
             mesh.rotation.x = -Math.PI / 2;
             mesh.position.y += 0.001;
           }
-
-          scene.add(mesh);
-          placed.push(mesh);
-          selectLast();
-          centerCue.style.opacity = "0"; setTimeout(()=>centerCue.style.display="none", 400);
+          scene.add(mesh); 
+          placedObjects.push(mesh);
+          centerCue.style.opacity = "0"; 
+          setTimeout(()=>centerCue.style.display="none", 400);
         });
 
-        // Controls
-        function nudgeScale(delta){
-          if (!selected) return;
-          const s = selected.scale.x;
-          const ns = THREE.MathUtils.clamp(s + delta, 0.3, 2.5);
-          selected.scale.set(ns, ns, ns);
-        }
-        function nudgeRotate(deg){
-          if (!selected) return;
-          // rotate around Z for walls / Y for floors to feel natural
-          const up = new THREE.Vector3(0,1,0).applyQuaternion(selected.quaternion);
-          if (Math.abs(up.y) < 0.4) {
-            selected.rotateZ(THREE.MathUtils.degToRad(deg));
-          } else {
-            selected.rotateY(THREE.MathUtils.degToRad(deg));
-          }
-        }
-        function cyclePattern(){
-          styleIndex = (styleIndex + 1) % 3;
-          // Update material on the selected or last placed; if none, change the base for next placements
-          const target = selected || placed[placed.length - 1];
-          if (target) {
-            const newMat = createMaterial();
-            target.material.dispose();
-            target.material = newMat;
-          } else {
-            // just updates the pre-drawn base (effectively next placement style)
-            baseTex.needsUpdate = true;
-          }
-        }
-        function resetAll(){
-          for (const m of placed) {
-            m.traverse(o => {
-              if (o.material && o.material.map) o.material.map.dispose();
-              if (o.material) o.material.dispose();
-              if (o.geometry) o.geometry.dispose();
-            });
-            scene.remove(m);
-          }
-          placed.length = 0;
-          selected = null;
-          centerCue.style.display = "grid"; centerCue.style.opacity = "1";
-        }
+        loader.style.opacity = "0"; 
+        setTimeout(()=>loader.remove(), 200);
 
-        // Wire buttons
-        controls.style.display = "flex";
-        btnSmaller.onclick = () => nudgeScale(-0.08);
-        btnBigger.onclick  = () => nudgeScale(+0.08);
-        btnRotL.onclick    = () => nudgeRotate(-8);
-        btnRotR.onclick    = () => nudgeRotate(+8);
-        btnPattern.onclick = () => cyclePattern();
-        btnReset.onclick   = () => resetAll();
-
-        // Entered AR → hide loader
-        loader.style.opacity = "0"; setTimeout(()=>loader.remove(), 180);
-
-        // Animation loop
         renderer.setAnimationLoop((t, frame) => {
           if (reticle.tick) reticle.tick(t/1000);
           if (frame) {
@@ -422,31 +345,96 @@
               reticle.visible = false;
             }
           }
-
-          // entrance + select pulse
+          
           const now = performance.now();
-          for (const obj of placed) {
+          const time = t / 1000;
+          
+          for (const obj of placedObjects) {
+            // Scale-in animation
             if (obj.userData.animIn) {
               const dt = Math.min((now - obj.userData.spawnT) / 450, 1);
-              const s = 0.58 + (1 - 0.58) * (1 - Math.pow(1 - dt, 3));
+              const s = 0.6 + (1 - 0.6) * (1 - Math.pow(1 - dt, 3));
               obj.scale.set(s,s,s);
               if (dt >= 1) obj.userData.animIn = false;
             }
-            if (obj === selected && obj.userData.pulseT) {
-              const tt = (now - obj.userData.pulseT) / 400;
-              if (tt <= 1) {
-                const extra = (1 - Math.pow(1-tt, 3)) * 0.05;
-                obj.scale.set(obj.scale.x + extra, obj.scale.y + extra, obj.scale.z + extra);
-              } else {
-                delete obj.userData.pulseT;
+            
+            // Animate flowing particles
+            if (obj.userData.particles) {
+              const particles = obj.userData.particles;
+              const positions = particles.geometry.attributes.position.array;
+              const speeds = particles.userData.speeds;
+              const phases = particles.userData.phases;
+              
+              for (let i = 0; i < positions.length / 3; i++) {
+                const i3 = i * 3;
+                const angle = time * speeds[i] + phases[i];
+                const radius = 1.5 + Math.sin(time * 0.5 + i * 0.1) * 0.8;
+                positions[i3] = Math.cos(angle) * radius;
+                positions[i3 + 1] = 0.15 + Math.sin(time * 2 + i * 0.3) * 0.1;
+                positions[i3 + 2] = Math.sin(angle) * radius;
+              }
+              particles.geometry.attributes.position.needsUpdate = true;
+              
+              // Rotate particle system slowly
+              particles.rotation.y = time * 0.1;
+            }
+            
+            // Update mandala overlay animation
+            if (obj.userData.mandalaCanvas && obj.userData.mandalaTex) {
+              const canvas = obj.userData.mandalaCanvas;
+              const ctx = canvas.getContext('2d');
+              ctx.clearRect(0, 0, 512, 512);
+              
+              const cx = 256, cy = 256;
+              const pulseScale = 1 + Math.sin(time * 1.5) * 0.08;
+              
+              // Draw animated rings
+              for (let layer = 0; layer < 3; layer++) {
+                const radius = (200 - layer * 60) * pulseScale;
+                const segments = 8 + layer * 4;
+                
+                for (let i = 0; i < segments; i++) {
+                  const angle = (i / segments) * Math.PI * 2 + time * (0.3 - layer * 0.1);
+                  const x = cx + Math.cos(angle) * radius;
+                  const y = cy + Math.sin(angle) * radius;
+                  
+                  const grad = ctx.createRadialGradient(x, y, 0, x, y, 25 - layer * 5);
+                  const colors = [
+                    'rgba(255,209,102,0.5)',
+                    'rgba(225,90,151,0.4)', 
+                    'rgba(144,224,239,0.3)'
+                  ];
+                  grad.addColorStop(0, colors[layer]);
+                  grad.addColorStop(1, 'rgba(0,0,0,0)');
+                  
+                  ctx.fillStyle = grad;
+                  ctx.beginPath();
+                  ctx.arc(x, y, 15 - layer * 3, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              }
+              
+              // Central glow that pulses
+              const centerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80 * pulseScale);
+              centerGlow.addColorStop(0, 'rgba(255,255,255,0.3)');
+              centerGlow.addColorStop(0.5, 'rgba(255,209,102,0.15)');
+              centerGlow.addColorStop(1, 'rgba(0,0,0,0)');
+              ctx.fillStyle = centerGlow;
+              ctx.beginPath();
+              ctx.arc(cx, cy, 80 * pulseScale, 0, Math.PI * 2);
+              ctx.fill();
+              
+              obj.userData.mandalaTex.needsUpdate = true;
+              
+              if (obj.userData.mandalaOverlay) {
+                obj.userData.mandalaOverlay.rotation.z = time * 0.15;
               }
             }
           }
-
+          
           renderer.render(scene, camera);
         });
 
-        // Resize & cleanup
         window.addEventListener('resize', () => renderer.setSize(window.innerWidth, window.innerHeight));
         window.addEventListener('beforeunload', () => { try { session.end(); } catch {} });
       }
