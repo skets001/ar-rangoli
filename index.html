@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+  />
+  <title>AR Rangoli — Tap to Place</title>
+  <meta name="theme-color" content="#0c0c0c" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <style>
+    /* ===== Base & Indian-aesthetic UI ===== */
+    :root {
+      --bg: #0b0b0e;
+      --fg: #f7f2ea;
+      --accent: #e15a97; /* rani pink */
+      --accent-2: #ffb703; /* marigold */
+      --muted: #8b8b93;
+    }
+    html, body {
+      margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    /* Fullscreen canvas */
+    canvas { display: block; }
+
+    /* ===== Overlays ===== */
+    .overlay {
+      position: fixed; inset: 0; pointer-events: none;
+      display: grid; place-items: end center; padding: env(safe-area-inset-bottom);
+    }
+    .hud {
+      width: 100%; box-sizing: border-box; padding: 14px 16px 18px;
+      display: flex; gap: 10px; justify-content: center; align-items: center;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(12,12,14,0.85) 30%, rgba(12,12,14,1) 100%);
+      pointer-events: none;
+    }
+    .pill {
+      pointer-events: auto;
+      border: 1px solid #262630;
+      background: #13131a;
+      color: var(--fg);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 14px;
+      opacity: 0.95;
+      display: inline-flex; align-items: center; gap: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    }
+    .pill b { color: var(--accent-2); }
+
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px; gap: 10px;
+      background: linear-gradient(180deg, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.4) 100%);
+      backdrop-filter: blur(6px);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .brand {
+      pointer-events: auto;
+      font-weight: 700; letter-spacing: .3px;
+      color: var(--fg); font-size: 15px;
+      display: inline-flex; align-items: center; gap: 10px;
+    }
+    .brand .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff 0, #ffd166 40%, #f94144 100%);
+      box-shadow: 0 0 8px rgba(255, 210, 50, .9);
+    }
+    .badge {
+      pointer-events: auto;
+      border-radius: 999px;
+      border: 1px solid #2c2c34;
+      padding: 6px 10px; font-size: 12px; color: var(--muted);
+    }
+
+    /* ===== Big center cue ===== */
+    .center-cue {
+      position: fixed; inset: 0; display: grid; place-items: center; z-index: 2;
+      pointer-events: none; transition: opacity .3s ease;
+    }
+    .center-cue .card {
+      pointer-events: auto;
+      background: rgba(10,10,14,0.75); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 16px 18px; text-align: center;
+      max-width: 280px; color: var(--fg);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      animation: pop .38s ease-out both;
+    }
+    @keyframes pop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .center-cue h3 { margin: 0 0 6px; font-size: 18px; }
+    .center-cue p { margin: 0; font-size: 13px; color: var(--muted); }
+
+    /* ===== Loader ===== */
+    .loader {
+      position: fixed; inset: 0; display: grid; place-items: center;
+      background: radial-gradient(circle at 50% 40%, #141420, #0b0b0e 60%);
+      z-index: 4; color: var(--fg);
+    }
+    .chakra {
+      width: 84px; height: 84px; border-radius: 50%;
+      border: 3px dashed #ffd166; animation: spin 2.2s linear infinite;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.03) inset;
+      position: relative;
+    }
+    .chakra::after {
+      content: ""; position: absolute; inset: 14px; border-radius: 50%;
+      border: 2px dotted #e15a97; animation: spin 3.6s linear infinite reverse;
+      filter: drop-shadow(0 0 12px rgba(225,90,151,.35));
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { margin-top: 16px; font-size: 14px; color: var(--muted); }
+
+    /* Hidden but accessible */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  </style>
+</head>
+<body>
+  <!-- Top bar -->
+  <div class="topbar" id="topbar">
+    <div class="brand"><span class="dot"></span> AR Rangoli</div>
+    <div class="badge" id="statusBadge">Initializing…</div>
+  </div>
+
+  <!-- Loader -->
+  <div class="loader" id="loader" role="status" aria-live="polite">
+    <div class="chakra" aria-hidden="true"></div>
+    <p>Preparing rangoli magic…</p>
+  </div>
+
+  <!-- Center cue -->
+  <div class="center-cue" id="centerCue">
+    <div class="card">
+      <h3>Move your phone</h3>
+      <p>Look around to detect a floor/wall. <b>Tap</b> to place the rangoli.</p>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div class="overlay">
+    <div class="hud">
+      <div class="pill">Tip: Try a <b>bright floor</b> for best tracking</div>
+    </div>
+  </div>
+
+  <!-- Three.js & helpers (pinned) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
+
+  <script>
+    // ===== Minimal reticle (hit-test visual) =====
+    function createReticle() {
+      const geo = new THREE.RingGeometry(0.09, 0.1, 64);
+      // rotate to face camera by default; we’ll align with hit pose per frame
+      geo.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xffb703, // marigold
+        transparent: true,
+        opacity: 0.95
+      });
+      const ring = new THREE.Mesh(geo, mat);
+
+      // inner ring accent
+      const geo2 = new THREE.RingGeometry(0.055, 0.07, 32);
+      geo2.rotateX(-Math.PI / 2);
+      const mat2 = new THREE.MeshBasicMaterial({ color: 0xe15a97, transparent: true, opacity: 0.95 });
+      const ring2 = new THREE.Mesh(geo2, mat2);
+
+      const group = new THREE.Group();
+      group.add(ring, ring2);
+
+      // subtle pulsing
+      group.tick = (t) => {
+        const s = 1 + Math.sin(t * 2.2) * 0.03;
+        group.scale.set(s, s, s);
+      };
+
+      group.visible = false;
+      return group;
+    }
+
+    // ===== Procedural Rangoli Canvas (authentic-ish & vibrant, transparent bg) =====
+    function drawRangoliTexture(size = 1024) {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+
+      const cx = size / 2, cy = size / 2;
+      const R = size * 0.46;
+
+      // helper: petal
+      function petal(angle, r1, r2, w, colorA, colorB) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        const grad = ctx.createLinearGradient(0, -r1, 0, -r2);
+        grad.addColorStop(0, colorA);
+        grad.addColorStop(1, colorB);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, -r1);
+        ctx.bezierCurveTo(w, -r1 * 0.65, w, -r2 * 0.35, 0, -r2);
+        ctx.bezierCurveTo(-w, -r2 * 0.35, -w, -r1 * 0.65, 0, -r1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Base radial gradient glow
+      const radial = ctx.createRadialGradient(cx, cy, R * 0.05, cx, cy, R * 1.02);
+      radial.addColorStop(0, 'rgba(255,255,255,0.06)');
+      radial.addColorStop(0.65, 'rgba(255,210,100,0.04)');
+      radial.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = radial;
+      ctx.beginPath(); ctx.arc(cx, cy, R * 1.05, 0, Math.PI * 2); ctx.fill();
+
+      // Outer lotus petals
+      const petals = 12;
+      for (let i = 0; i < petals; i++) {
+        const a = (i / petals) * Math.PI * 2;
+        petal(a, R * 0.92, R * 0.55, R * 0.25, '#ff6b6b', '#f94144');
+      }
+
+      // Mid petals
+      for (let i = 0; i < petals; i++) {
+        const a = (i / petals) * Math.PI * 2 + Math.PI / petals;
+        petal(a, R * 0.6, R * 0.34, R * 0.16, '#ffd166', '#ffb703');
+      }
+
+      // Inner petals
+      for (let i = 0; i < petals; i++) {
+        const a = (i / petals) * Math.PI * 2;
+        petal(a, R * 0.36, R * 0.15, R * 0.11, '#7bd389', '#06d6a0');
+      }
+
+      // White kolam lines (circular mandala rings)
+      ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+      ctx.lineWidth = size * 0.006;
+      [0.52, 0.38, 0.26, 0.18, 0.12].forEach(mult => {
+        ctx.beginPath(); ctx.arc(cx, cy, R * mult, 0, Math.PI * 2); ctx.stroke();
+      });
+
+      // Dotted arcs (rangoli dots)
+      function dottedCircle(r, dots, color) {
+        for (let i = 0; i < dots; i++) {
+          const a = (i / dots) * Math.PI * 2;
+          const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 0.02);
+          gradient.addColorStop(0, color);
+          gradient.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath(); ctx.arc(x, y, size * 0.012, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      dottedCircle(R * 0.48, 36, '#ffb703');
+      dottedCircle(R * 0.33, 24, '#e15a97');
+      dottedCircle(R * 0.22, 16, '#90e0ef');
+
+      // Center bloom
+      const g2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.16);
+      g2.addColorStop(0, '#fff');
+      g2.addColorStop(0.4, '#ffd166');
+      g2.addColorStop(1, '#e15a97');
+      ctx.fillStyle = g2;
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.16, 0, Math.PI * 2); ctx.fill();
+
+      // Small center bindu
+      ctx.fillStyle = '#2d0e36';
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.04, 0, Math.PI * 2); ctx.fill();
+
+      return c;
+    }
+
+    (async function main() {
+      const loader = document.getElementById('loader');
+      const centerCue = document.getElementById('centerCue');
+      const statusBadge = document.getElementById('statusBadge');
+
+      // Basic capability checks
+      if (!navigator.xr || !window.isSecureContext) {
+        loader.innerHTML = `
+          <div class="chakra" aria-hidden="true"></div>
+          <p>AR not available. Use <b>Android Chrome</b> over HTTPS.</p>
+        `;
+        statusBadge.textContent = "AR not supported";
+        return;
+      }
+
+      const supportsAR = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+      if (!supportsAR) {
+        loader.innerHTML = `
+          <div class="chakra" aria-hidden="true"></div>
+          <p>Your device/browser doesn’t support WebXR AR. Try Android Chrome.</p>
+        `;
+        statusBadge.textContent = "AR not supported";
+        return;
+      }
+
+      // THREE.js scene setup
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera();
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // Ambient tint so the rangoli isn’t flat under all lighting
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+      scene.add(light);
+
+      // Reticle for hit-test feedback
+      const reticle = createReticle();
+      scene.add(reticle);
+
+      // Build the rangoli texture
+      statusBadge.textContent = "Drawing rangoli…";
+      const rangoliCanvas = drawRangoliTexture(1024);
+      const rangoliTex = new THREE.CanvasTexture(rangoliCanvas);
+      rangoliTex.anisotropy = 8;
+      rangoliTex.encoding = THREE.sRGBEncoding;
+
+      const rangoliMaterial = new THREE.MeshBasicMaterial({
+        map: rangoliTex,
+        transparent: true,
+        opacity: 1.0
+      });
+
+      // We'll place a slightly raised plane for floors; rotated for walls if normal is steep
+      function createRangoliMesh() {
+        const sizeMeters = 0.8; // ~80 cm across
+        const geo = new THREE.PlaneGeometry(sizeMeters, sizeMeters);
+        const mesh = new THREE.Mesh(geo, rangoliMaterial.clone());
+        mesh.rotation.x = -Math.PI / 2; // default: lie on floor
+        mesh.renderOrder = 1; // render over reticle
+        // small drop shadow/halo (simple duplicate, darker + blur via alpha)
+        const shadow = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
+        shadow.position.y = -0.001; // slight offset
+        shadow.scale.set(1.04, 1.04, 1.04);
+        mesh.add(shadow);
+
+        // entrance animation
+        mesh.scale.set(0.6, 0.6, 0.6);
+        mesh.userData.spawnT = performance.now();
+        mesh.userData.animIn = true;
+        return mesh;
+      }
+
+      // XR session + hit test plumbing
+      const sessionInit = {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay', 'plane-detection', 'light-estimation'],
+        // domOverlay: { root: document.body } // (uncomment when needed)
+      };
+
+      const session = await navigator.xr.requestSession('immersive-ar', sessionInit).catch((err) => {
+        loader.innerHTML = `<div class="chakra" aria-hidden="true"></div><p>Camera permission denied or AR failed.<br/><small>${String(err)}</small></p>`;
+        statusBadge.textContent = "AR session failed";
+        throw err;
+      });
+
+      statusBadge.textContent = "Point phone to scan…";
+
+      renderer.xr.setReferenceSpaceType('local');
+      await renderer.xr.setSession(session);
+
+      const referenceSpace = await session.requestReferenceSpace('local');
+      let hitTestSource = null;
+
+      // Create a hit test source tied to viewer space
+      const viewerSpace = await session.requestReferenceSpace('viewer');
+      hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+
+      // Tap to place handler
+      const placedObjects = [];
+      function onSelect() {
+        if (!reticle.visible) return;
+        const mesh = createRangoliMesh();
+        mesh.position.setFromMatrixPosition(reticle.matrix);
+
+        // Align to surface normal: estimate via reticle up-axis
+        const rot = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
+        mesh.quaternion.copy(rot);
+        // If it's a wall (normal roughly facing camera), rotate to face camera but flush to surface
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(mesh.quaternion);
+        if (Math.abs(up.y) < 0.4) {
+          // treat as wall: make the plane flush on wall and slightly offset
+          mesh.rotation.set(0, 0, 0);
+          // Align mesh normal to reticle normal (z axis of reticle)
+          const normal = new THREE.Vector3(0, 0, -1).applyQuaternion(rot).normalize();
+          const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+          mesh.quaternion.copy(targetQuat);
+          mesh.position.addScaledVector(normal, 0.002); // tiny offset to avoid z-fighting
+        } else {
+          // floor: rotate to lie flat
+          mesh.rotation.x = -Math.PI / 2;
+          mesh.position.y += 0.001; // avoid z-fighting
+        }
+
+        scene.add(mesh);
+        placedObjects.push(mesh);
+        centerCue.style.opacity = "0";
+        setTimeout(() => (centerCue.style.display = "none"), 400);
+      }
+
+      // Hook select gesture (screen tap)
+      session.addEventListener('select', onSelect);
+
+      // Remove loader now that everything is ready to render
+      loader.style.opacity = "0";
+      setTimeout(() => loader.remove(), 250);
+
+      // Render loop with hit test
+      renderer.setAnimationLoop((t, frame) => {
+        if (reticle.tick) reticle.tick(t / 1000);
+
+        if (frame) {
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestResults.length) {
+            const pose = hitTestResults[0].getPose(referenceSpace);
+            reticle.visible = true;
+            reticle.matrix.fromArray(pose.transform.matrix);
+          } else {
+            reticle.visible = false;
+          }
+        }
+
+        // Animate placed objects (gentle ease-in)
+        const now = performance.now();
+        for (const obj of placedObjects) {
+          if (obj.userData.animIn) {
+            const dt = Math.min((now - obj.userData.spawnT) / 450, 1);
+            const s = 0.6 + (1 - 0.6) * (1 - Math.pow(1 - dt, 3)); // easeOutCubic
+            obj.scale.set(s, s, s);
+            if (dt >= 1) obj.userData.animIn = false;
+          }
+        }
+
+        renderer.render(scene, camera);
+      });
+
+      // Resize
+      window.addEventListener('resize', () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // Clean up if page is hidden/closed
+      window.addEventListener('beforeunload', () => {
+        try { session.end(); } catch {}
+      });
+    })();
+  </script>
+</body>
+</html>
