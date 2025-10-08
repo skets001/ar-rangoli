@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
   />
-  <title>AR Rangoli — Tap to Place</title>
+  <title>AR Rangoli — Interactive</title>
   <meta name="theme-color" content="#0c0c0c" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <style>
@@ -76,7 +76,7 @@
   <!-- HUD -->
   <div class="overlay">
     <div class="hud">
-      <div class="pill">Tap to place flowing rangoli patterns ✨</div>
+      <div class="pill">Move closer to rangolis to see them glow ✨ Tap to add more!</div>
     </div>
   </div>
 
@@ -137,50 +137,43 @@
       return c;
     }
 
-    // Flowing particle system for ambient Diwali vibe
+    // Optimized particle system - fewer particles, smarter updates
     function createFlowingParticles() {
-      const particleCount = 80;
+      const particleCount = 30; // Reduced from 80
       const geometry = new THREE.BufferGeometry();
       const positions = new Float32Array(particleCount * 3);
       const colors = new Float32Array(particleCount * 3);
-      const sizes = new Float32Array(particleCount);
       
       const diwaliColors = [
-        new THREE.Color(0xffd166), // gold
-        new THREE.Color(0xe15a97), // pink
-        new THREE.Color(0xff6b6b), // red
-        new THREE.Color(0x90e0ef), // cyan
-        new THREE.Color(0x7bd389)  // green
+        new THREE.Color(0xffd166),
+        new THREE.Color(0xe15a97),
+        new THREE.Color(0xff6b6b)
       ];
 
       for (let i = 0; i < particleCount; i++) {
         const i3 = i * 3;
         const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * 3;
+        const radius = Math.random() * 2;
         positions[i3] = Math.cos(angle) * radius;
-        positions[i3 + 1] = Math.random() * 0.3 - 0.15;
+        positions[i3 + 1] = Math.random() * 0.2;
         positions[i3 + 2] = Math.sin(angle) * radius;
         
         const color = diwaliColors[Math.floor(Math.random() * diwaliColors.length)];
         colors[i3] = color.r;
         colors[i3 + 1] = color.g;
         colors[i3 + 2] = color.b;
-        
-        sizes[i] = Math.random() * 0.04 + 0.02;
       }
 
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
       const material = new THREE.PointsMaterial({
-        size: 0.04,
+        size: 0.05,
         vertexColors: true,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.6,
         blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        sizeAttenuation: true
+        depthWrite: false
       });
 
       const particles = new THREE.Points(geometry, material);
@@ -188,11 +181,26 @@
       particles.userData.phases = [];
       
       for (let i = 0; i < particleCount; i++) {
-        particles.userData.speeds.push(Math.random() * 0.3 + 0.2);
+        particles.userData.speeds.push(Math.random() * 0.2 + 0.15);
         particles.userData.phases.push(Math.random() * Math.PI * 2);
       }
 
       return particles;
+    }
+
+    // Interactive ripple effect when user gets close
+    function createRippleEffect() {
+      const geo = new THREE.RingGeometry(0.1, 0.12, 32);
+      geo.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshBasicMaterial({ 
+        color: 0xffd166, 
+        transparent: true, 
+        opacity: 0,
+        side: THREE.DoubleSide
+      });
+      const ripple = new THREE.Mesh(geo, mat);
+      ripple.visible = false;
+      return ripple;
     }
 
     (function setup() {
@@ -262,32 +270,19 @@
           mesh.scale.set(0.6,0.6,0.6); 
           mesh.userData.spawnT = performance.now(); 
           mesh.userData.animIn = true;
+          mesh.userData.lastProximityCheck = 0;
+          mesh.userData.glowIntensity = 0;
           
-          // Add flowing particles around each rangoli
+          // Add optimized particles
           const particles = createFlowingParticles();
           particles.position.y = 0.05;
           mesh.add(particles);
           mesh.userData.particles = particles;
           
-          // Add animated mandala overlay
-          const mandalaCanvas = document.createElement('canvas');
-          mandalaCanvas.width = mandalaCanvas.height = 512;
-          const mandalaTex = new THREE.CanvasTexture(mandalaCanvas);
-          const mandalaGeo = new THREE.PlaneGeometry(sizeMeters * 1.6, sizeMeters * 1.6);
-          const mandalaMat = new THREE.MeshBasicMaterial({ 
-            map: mandalaTex, 
-            transparent: true, 
-            opacity: 0.6,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-          });
-          const mandalaOverlay = new THREE.Mesh(mandalaGeo, mandalaMat);
-          mandalaOverlay.position.y = 0.002;
-          mandalaOverlay.rotation.x = -Math.PI / 2;
-          mesh.add(mandalaOverlay);
-          mesh.userData.mandalaOverlay = mandalaOverlay;
-          mesh.userData.mandalaCanvas = mandalaCanvas;
-          mesh.userData.mandalaTex = mandalaTex;
+          // Add interactive ripple
+          const ripple = createRippleEffect();
+          mesh.add(ripple);
+          mesh.userData.ripple = ripple;
           
           return mesh;
         }
@@ -349,6 +344,10 @@
           const now = performance.now();
           const time = t / 1000;
           
+          // Get camera position for proximity detection
+          const cameraPos = new THREE.Vector3();
+          camera.getWorldPosition(cameraPos);
+          
           for (const obj of placedObjects) {
             // Scale-in animation
             if (obj.userData.animIn) {
@@ -358,77 +357,68 @@
               if (dt >= 1) obj.userData.animIn = false;
             }
             
-            // Animate flowing particles
-            if (obj.userData.particles) {
+            // Proximity-based interaction (check every 100ms)
+            if (now - obj.userData.lastProximityCheck > 100) {
+              obj.userData.lastProximityCheck = now;
+              const objPos = new THREE.Vector3();
+              obj.getWorldPosition(objPos);
+              const distance = cameraPos.distanceTo(objPos);
+              
+              // Interactive glow when user is close (within 1.5 meters)
+              if (distance < 1.5) {
+                const proximity = 1 - (distance / 1.5);
+                obj.userData.glowIntensity = Math.min(obj.userData.glowIntensity + 0.05, proximity * 0.8);
+                
+                // Trigger ripple effect
+                if (obj.userData.ripple && proximity > 0.5) {
+                  obj.userData.ripple.visible = true;
+                  obj.userData.ripple.userData.rippleStart = now;
+                }
+              } else {
+                obj.userData.glowIntensity = Math.max(obj.userData.glowIntensity - 0.03, 0);
+              }
+              
+              // Apply glow to rangoli material
+              if (obj.material) {
+                obj.material.opacity = 1 + obj.userData.glowIntensity * 0.3;
+              }
+            }
+            
+            // Animate ripple effect
+            if (obj.userData.ripple && obj.userData.ripple.visible) {
+              const rippleAge = (now - obj.userData.ripple.userData.rippleStart) / 1000;
+              if (rippleAge < 1.5) {
+                const scale = 1 + rippleAge * 2;
+                obj.userData.ripple.scale.set(scale, scale, 1);
+                obj.userData.ripple.material.opacity = (1 - rippleAge / 1.5) * 0.6;
+              } else {
+                obj.userData.ripple.visible = false;
+              }
+            }
+            
+            // Animate flowing particles (throttled updates)
+            if (obj.userData.particles && Math.random() > 0.5) {
               const particles = obj.userData.particles;
               const positions = particles.geometry.attributes.position.array;
               const speeds = particles.userData.speeds;
               const phases = particles.userData.phases;
               
-              for (let i = 0; i < positions.length / 3; i++) {
-                const i3 = i * 3;
-                const angle = time * speeds[i] + phases[i];
-                const radius = 1.5 + Math.sin(time * 0.5 + i * 0.1) * 0.8;
+              // Update fewer particles per frame for performance
+              const updateCount = Math.floor(positions.length / 9);
+              for (let i = 0; i < updateCount; i++) {
+                const idx = Math.floor(Math.random() * (positions.length / 3));
+                const i3 = idx * 3;
+                const angle = time * speeds[idx] + phases[idx];
+                const radius = 1.2 + Math.sin(time * 0.3 + idx * 0.1) * 0.5;
                 positions[i3] = Math.cos(angle) * radius;
-                positions[i3 + 1] = 0.15 + Math.sin(time * 2 + i * 0.3) * 0.1;
+                positions[i3 + 1] = 0.15 + Math.sin(time + idx * 0.2) * 0.08;
                 positions[i3 + 2] = Math.sin(angle) * radius;
               }
               particles.geometry.attributes.position.needsUpdate = true;
+              particles.rotation.y = time * 0.08;
               
-              // Rotate particle system slowly
-              particles.rotation.y = time * 0.1;
-            }
-            
-            // Update mandala overlay animation
-            if (obj.userData.mandalaCanvas && obj.userData.mandalaTex) {
-              const canvas = obj.userData.mandalaCanvas;
-              const ctx = canvas.getContext('2d');
-              ctx.clearRect(0, 0, 512, 512);
-              
-              const cx = 256, cy = 256;
-              const pulseScale = 1 + Math.sin(time * 1.5) * 0.08;
-              
-              // Draw animated rings
-              for (let layer = 0; layer < 3; layer++) {
-                const radius = (200 - layer * 60) * pulseScale;
-                const segments = 8 + layer * 4;
-                
-                for (let i = 0; i < segments; i++) {
-                  const angle = (i / segments) * Math.PI * 2 + time * (0.3 - layer * 0.1);
-                  const x = cx + Math.cos(angle) * radius;
-                  const y = cy + Math.sin(angle) * radius;
-                  
-                  const grad = ctx.createRadialGradient(x, y, 0, x, y, 25 - layer * 5);
-                  const colors = [
-                    'rgba(255,209,102,0.5)',
-                    'rgba(225,90,151,0.4)', 
-                    'rgba(144,224,239,0.3)'
-                  ];
-                  grad.addColorStop(0, colors[layer]);
-                  grad.addColorStop(1, 'rgba(0,0,0,0)');
-                  
-                  ctx.fillStyle = grad;
-                  ctx.beginPath();
-                  ctx.arc(x, y, 15 - layer * 3, 0, Math.PI * 2);
-                  ctx.fill();
-                }
-              }
-              
-              // Central glow that pulses
-              const centerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80 * pulseScale);
-              centerGlow.addColorStop(0, 'rgba(255,255,255,0.3)');
-              centerGlow.addColorStop(0.5, 'rgba(255,209,102,0.15)');
-              centerGlow.addColorStop(1, 'rgba(0,0,0,0)');
-              ctx.fillStyle = centerGlow;
-              ctx.beginPath();
-              ctx.arc(cx, cy, 80 * pulseScale, 0, Math.PI * 2);
-              ctx.fill();
-              
-              obj.userData.mandalaTex.needsUpdate = true;
-              
-              if (obj.userData.mandalaOverlay) {
-                obj.userData.mandalaOverlay.rotation.z = time * 0.15;
-              }
+              // Boost particle glow when user is close
+              particles.material.opacity = 0.6 + obj.userData.glowIntensity * 0.4;
             }
           }
           
